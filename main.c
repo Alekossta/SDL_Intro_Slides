@@ -101,6 +101,9 @@ int main()
         // update part
         animationSourceRect.x = 128 * ((SDL_GetTicks() / 75) % 6);
 
+        // move the destination rectnagle (move the cat)
+        animationsDestinationRect.x += 1;
+
         // render part
         SDL_SetRenderDrawColor(renderer,255,0,0,255);
         SDL_RenderClear(renderer);
