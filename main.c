@@ -1,15 +1,19 @@
 #include <stdio.h>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 
 int running = 1;
 
 SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
 
-SDL_Texture* myTexture = NULL;
+SDL_Texture* bTexture = NULL;
+SDL_Rect bSourceRect;
+SDL_Rect bDestinationRect;
 
-SDL_Rect sourceRect;
-SDL_Rect destinationRect;
+SDL_Texture* animationTexture = NULL;
+SDL_Rect animationSourceRect;
+SDL_Rect animationsDestinationRect;
 
 int init()
 {
@@ -52,18 +56,29 @@ int main()
 {
     if (init() != 0) return 1;
 
-    // load the .bmp image and create the texture
+    // load the ballou .bmp image and create the texture
     SDL_Surface* tempSurface = SDL_LoadBMP("assets/cat.bmp");
-    myTexture = SDL_CreateTextureFromSurface(renderer, tempSurface);
+    bTexture = SDL_CreateTextureFromSurface(renderer, tempSurface);
     SDL_FreeSurface(tempSurface);
 
     // get dimensions of texture and store them to source rect
     // 2nd and 3d null because it returns information we dont need at this point
-    SDL_QueryTexture(myTexture, NULL,NULL, &sourceRect.w, &sourceRect.h);
-    destinationRect.x = 0;
-    destinationRect.y = 0;
-    destinationRect.h = sourceRect.h;
-    destinationRect.w = sourceRect.w;
+    SDL_QueryTexture(bTexture, NULL,NULL, &bSourceRect.w, &bSourceRect.h);
+    bDestinationRect.x = 0;
+    bDestinationRect.y = 0;
+    bDestinationRect.h = bSourceRect.h;
+    bDestinationRect.w = bSourceRect.w;
+
+
+    // load the animation image and create the texture
+    tempSurface = IMG_Load("assets/animation-alpha.png");
+    animationTexture = SDL_CreateTextureFromSurface(renderer, tempSurface);
+    SDL_FreeSurface(tempSurface);
+
+    animationSourceRect.w = 128;
+    animationSourceRect.h = 82;
+    animationsDestinationRect.w = 128;
+    animationsDestinationRect.h = 82;
 
     while(running)
     {
@@ -83,11 +98,16 @@ int main()
             }
         }
 
+        // update part
+        animationSourceRect.x = 128 * ((SDL_GetTicks() / 75) % 6);
+
         // render part
         SDL_SetRenderDrawColor(renderer,255,0,0,255);
         SDL_RenderClear(renderer);
 
-        SDL_RenderCopy(renderer, myTexture, &sourceRect, &destinationRect);
+        //SDL_RenderCopy(renderer, bTexture, &bSourceRect, &bDestinationRect);
+
+        SDL_RenderCopy(renderer, animationTexture, &animationSourceRect, &animationsDestinationRect);
 
         SDL_RenderPresent(renderer);
     }
