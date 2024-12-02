@@ -2,6 +2,9 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
+const int FPS = 120;
+const int TIME_FOR_EACH_FRAME = 1000/ FPS;
+
 int running = 1;
 
 SDL_Window* window = NULL;
@@ -49,13 +52,6 @@ int init()
         return 1;        
     }
 
-    return 0;
-}
-
-int main()
-{
-    if (init() != 0) return 1;
-
     // load the ballou .bmp image and create the texture
     SDL_Surface* tempSurface = SDL_LoadBMP("assets/cat.bmp");
     bTexture = SDL_CreateTextureFromSurface(renderer, tempSurface);
@@ -80,52 +76,101 @@ int main()
     animationsDestinationRect.w = 128;
     animationsDestinationRect.h = 82;
 
-    while(running)
+    return 0;
+}
+
+void input()
+{
+    // listen for input
+    SDL_Event currentEvent;
+
+    while(SDL_PollEvent(&currentEvent))
     {
-        // listen for input
-        SDL_Event currentEvent;
-        while(SDL_PollEvent(&currentEvent))
+        SDL_EventType eventType = currentEvent.type;
+        switch (eventType)
         {
-            SDL_EventType eventType = currentEvent.type;
-            switch (eventType)
+        case SDL_QUIT:
+            running = 0;
+            break;
+        case SDL_MOUSEBUTTONDOWN:
+            if(currentEvent.button.button == SDL_BUTTON_LEFT)
             {
-            case SDL_QUIT:
-                running = 0;
-                break;
-            case SDL_MOUSEBUTTONDOWN:
-                if(currentEvent.button.button == SDL_BUTTON_LEFT)
-                {
-                    printf("left mouse button clicked\n");
-                }
-                break;
-            case SDL_MOUSEMOTION:
-                int mouseX = currentEvent.motion.x;
-                int mouseY = currentEvent.motion.y;
-                printf("Mouse moved to: %d, %d\n", mouseX, mouseY);
-                break;
-            default:
-                break;
+                //printf("left mouse button clicked\n");
             }
+            break;
+        case SDL_MOUSEMOTION:
+            int mouseX = currentEvent.motion.x;
+            int mouseY = currentEvent.motion.y;
+            //printf("Mouse moved to: %d, %d\n", mouseX, mouseY);
+            break;
+        default:
+            break;
         }
-
-        // update part
-        animationSourceRect.x = 128 * ((SDL_GetTicks() / 75) % 6);
-
-        // move the destination rectnagle (move the cat)
-        animationsDestinationRect.x += 1;
-
-        // render part
-        SDL_SetRenderDrawColor(renderer,255,0,0,255);
-        SDL_RenderClear(renderer);
-
-        //SDL_RenderCopy(renderer, bTexture, &bSourceRect, &bDestinationRect);
-
-        SDL_RenderCopy(renderer, animationTexture, &animationSourceRect, &animationsDestinationRect);
-
-        SDL_RenderPresent(renderer);
     }
 
-    SDL_DestroyWindow(window);
+    const Uint8* keyboardState = SDL_GetKeyboardState(0);
+    if(keyboardState[SDL_SCANCODE_SPACE] == 1)
+    {
+        printf("Space is pressed\n");
+    }
+}
+
+void update(float deltaTime)
+{
+    // move the destination rectnagle (move the cat)
+    animationsDestinationRect.x += 200 * deltaTime;
+
+    // update part
+    animationSourceRect.x = 128 * ((SDL_GetTicks() / 75) % 6);
+
+}
+
+void render()
+{
+    // render part
+    SDL_SetRenderDrawColor(renderer,255,0,0,255);
+    SDL_RenderClear(renderer);
+
+    //SDL_RenderCopy(renderer, bTexture, &bSourceRect, &bDestinationRect);
+
+    SDL_RenderCopy(renderer, animationTexture, &animationSourceRect, &animationsDestinationRect);
+
+    SDL_RenderPresent(renderer);
+}
+
+void cleanUp()
+{
+    SDL_DestroyTexture(bTexture);
+    SDL_DestroyTexture(animationTexture);
     SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
     SDL_Quit();
+}
+
+int main()
+{
+    if (init() != 0) return 1;
+
+    Uint32 deltaLastTime = SDL_GetTicks(); // set a starting value for the first loop
+
+    while(running)
+    {
+        Uint32 frameStart = SDL_GetTicks();
+        input();
+        // calculate delta time
+        Uint32 deltaCurrentTime = SDL_GetTicks();
+        float deltaTime = (deltaCurrentTime - deltaLastTime) / 1000.0f;
+        deltaLastTime = deltaCurrentTime;
+        update(deltaTime);
+        render();
+        Uint32 frameEnd = SDL_GetTicks();
+        Uint32 timeToRenderFrame = frameEnd - frameStart;
+        if(timeToRenderFrame < TIME_FOR_EACH_FRAME)
+        {
+            SDL_Delay(TIME_FOR_EACH_FRAME - timeToRenderFrame);
+            //deltaLastTime += TIME_FOR_EACH_FRAME - timeToRenderFrame;
+        }
+    }
+
+    cleanUp();
 }
