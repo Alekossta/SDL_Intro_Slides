@@ -84,7 +84,7 @@ int main()
     {
         // listen for input
         SDL_Event currentEvent;
-        if(SDL_PollEvent(&currentEvent))
+        while(SDL_PollEvent(&currentEvent))
         {
             SDL_EventType eventType = currentEvent.type;
             switch (eventType)
@@ -92,7 +92,17 @@ int main()
             case SDL_QUIT:
                 running = 0;
                 break;
-            
+            case SDL_MOUSEBUTTONDOWN:
+                if(currentEvent.button.button == SDL_BUTTON_LEFT)
+                {
+                    printf("left mouse button clicked\n");
+                }
+                break;
+            case SDL_MOUSEMOTION:
+                int mouseX = currentEvent.motion.x;
+                int mouseY = currentEvent.motion.y;
+                printf("Mouse moved to: %d, %d\n", mouseX, mouseY);
+                break;
             default:
                 break;
             }
