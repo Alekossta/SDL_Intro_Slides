@@ -2,8 +2,13 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
-const int FPS = 120;
-const int TIME_FOR_EACH_FRAME = 1000/ FPS;
+#ifndef FPS
+#define FPS 60
+#endif
+
+const int TIME_FOR_EACH_FRAME = 1000 / FPS;
+const int SCREEN_WIDTH = 800;
+const int SCREEN_HEIGHT = 600;
 
 int running = 1;
 
@@ -16,7 +21,7 @@ SDL_Rect bDestinationRect;
 
 SDL_Texture* animationTexture = NULL;
 SDL_Rect animationSourceRect;
-SDL_Rect animationsDestinationRect;
+SDL_FRect animationsDestinationRect;
 
 int init()
 {
@@ -33,7 +38,7 @@ int init()
         "Pong",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        800, 600,
+        SCREEN_WIDTH, SCREEN_HEIGHT,
         SDL_WINDOW_SHOWN
     );
     if(!window) // error check
@@ -44,7 +49,7 @@ int init()
     }
 
     // create the renderer
-    renderer = SDL_CreateRenderer(window, -1, 0);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if(!renderer) // error check
     {
         printf("Could not create renderer: %s\n", SDL_GetError());
@@ -115,14 +120,21 @@ void input()
     }
 }
 
+int once = 0;
 void update(float deltaTime)
 {
     // move the destination rectnagle (move the cat)
-    animationsDestinationRect.x += 200 * deltaTime;
+    animationsDestinationRect.x += 200.0f * deltaTime;
+
+    if(animationsDestinationRect.x > SCREEN_WIDTH && once == 0)
+    {
+        double timeInSeconds = SDL_GetTicks() / 1000.f;
+        printf("Finished at %lf seconds\n", timeInSeconds);
+        once = 1; 
+    }
 
     // update part
     animationSourceRect.x = 128 * ((SDL_GetTicks() / 75) % 6);
-
 }
 
 void render()
@@ -133,7 +145,8 @@ void render()
 
     //SDL_RenderCopy(renderer, bTexture, &bSourceRect, &bDestinationRect);
 
-    SDL_RenderCopy(renderer, animationTexture, &animationSourceRect, &animationsDestinationRect);
+    SDL_RenderCopyF(renderer, animationTexture, &animationSourceRect, &animationsDestinationRect);
+
 
     SDL_RenderPresent(renderer);
 }
@@ -157,10 +170,12 @@ int main()
     {
         Uint32 frameStart = SDL_GetTicks();
         input();
+
         // calculate delta time
         Uint32 deltaCurrentTime = SDL_GetTicks();
         float deltaTime = (deltaCurrentTime - deltaLastTime) / 1000.0f;
         deltaLastTime = deltaCurrentTime;
+
         update(deltaTime);
         render();
         Uint32 frameEnd = SDL_GetTicks();
@@ -168,7 +183,6 @@ int main()
         if(timeToRenderFrame < TIME_FOR_EACH_FRAME)
         {
             SDL_Delay(TIME_FOR_EACH_FRAME - timeToRenderFrame);
-            //deltaLastTime += TIME_FOR_EACH_FRAME - timeToRenderFrame;
         }
     }
 
